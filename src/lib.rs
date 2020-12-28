@@ -19,6 +19,8 @@ mod minilzo;
 use std::mem::{size_of, MaybeUninit};
 use std::os::raw::{c_int, c_long, c_short};
 
+use minilzo::lzo_uint;
+
 type LZOResult<T> = Result<T, Error>;
 
 #[derive(Debug, PartialEq)]
@@ -135,12 +137,12 @@ impl LZO {
 
     /// Compress the src data and return an error if it fails.
     pub fn compress(&mut self, src: &[u8]) -> LZOResult<Vec<u8>> {
-        let mut out_len = (src.len() + src.len() / 16 + 64 + 3) as u64;
+        let mut out_len = (src.len() + src.len() / 16 + 64 + 3) as lzo_uint;
         let mut out: Vec<u8> = vec![0u8; out_len as usize];
         let code = unsafe {
             minilzo::lzo1x_1_compress(
                 src.as_ptr(),
-                src.len() as u64,
+                src.len() as lzo_uint,
                 out.as_mut_ptr(),
                 &mut out_len,
                 self.wrkmem.as_mut_ptr() as *mut _,
@@ -156,7 +158,7 @@ impl LZO {
         let code = unsafe {
             minilzo::lzo1x_decompress(
                 src.as_ptr(),
-                src.len() as u64,
+                src.len() as lzo_uint,
                 dst.as_mut_ptr(),
                 &dst_len as *const _ as *mut _,
                 std::ptr::null_mut(),
@@ -200,7 +202,7 @@ impl LZO {
 /// ```
 pub fn adler32(buf: &[u8]) -> u32 {
     let checksum = 1u32;
-    let checksum = unsafe { minilzo::lzo_adler32(checksum, buf.as_ptr(), buf.len() as u64) };
+    let checksum = unsafe { minilzo::lzo_adler32(checksum, buf.as_ptr(), buf.len() as lzo_uint) };
     checksum
 }
 
